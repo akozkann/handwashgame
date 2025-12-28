@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>El Yıkama Oyunu</title>
+<style>
+  body { margin:0; background:#222; color:#fff; text-align:center; font-family:Arial; overflow:hidden; }
+  #info { margin:6px; }
+  canvas { background:#333; display:block; margin:0 auto; }
+</style>
+</head>
+<body>
+<h2>Sırayla tıkla: Sabun → Su → Havlu</h2>
+<p id="info">Başla.</p>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const info = document.getElementById("info");
+
+// Tam ekran yap
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 80;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// Görseller
+const imgs = {
+  hand: new Image(),
+  soap: new Image(),
+  water: new Image(),
+  towel: new Image()
+};
+imgs.hand.src = "el.png";
+imgs.soap.src = "sabun.png";
+imgs.water.src = "musluk.png";
+imgs.towel.src = "havlu.png";
+
+// Objeler
+const items = [
+  { name:"sabun", img: imgs.soap, num:0, x:0, y:0 },
+  { name:"su",    img: imgs.water, num:0, x:0, y:0 },
+  { name:"havlu", img: imgs.towel, num:0, x:0, y:0 }
+];
+
+// Karıştır
+function shuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+shuffle(items);
+
+const order = ["sabun","su","havlu"];
+let step = 0;
+
+const size = 90;
+const boxW = 90, boxH = 55;
+
+function layout(){
+  const gap = canvas.width / 4;
+  items.forEach((it,i)=>{
+    it.x = gap*(i+1) - size/2;
+    it.y = canvas.height * 0.2;
+  });
+}
+layout();
+window.addEventListener("resize", layout);
+
+// Tıklama
+canvas.addEventListener("click", e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left;
+  const my = e.clientY - r.top;
+
+  items.forEach(item => {
+    const bx = item.x;
+    const by = item.y + size + 10;
+    if (mx>bx && mx<bx+boxW && my>by && my<by+boxH) {
+      handleClick(item);
+    }
+  });
+});
+
+function handleClick(item){
+  if (item.name === order[step]) {
+    step++;
+    item.num = step;
+    if (step === 3) info.textContent = "Tebrikler! Eller temiz 🧼";
+    else info.textContent = "Doğru, devam et.";
+  } else {
+    info.textContent = "Yanlış sıra! Baştan başla.";
+    reset();
+  }
+}
+
+function reset(){
+  step = 0;
+  items.forEach(i => i.num = 0);
+}
+
+// Çizim
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  items.forEach(item => {
+    ctx.drawImage(item.img, item.x, item.y, size, size);
+
+    const bx = item.x;
+    const by = item.y + size + 10;
+    ctx.fillStyle = "#555";
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = "#aaa";
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    if (item.num>0) {
+      ctx.fillStyle = "#fff";
+      ctx.font = "28px Arial";
+      ctx.fillText(item.num, bx+boxW/2-8, by+boxH/2+10);
+    }
+  });
+
+  // Eller alt orta
+  const handSize = 120;
+  ctx.drawImage(
+    imgs.hand,
+    canvas.width/2 - handSize/2,
+    canvas.height - handSize - 20,
+    handSize,
+    handSize
+  );
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
